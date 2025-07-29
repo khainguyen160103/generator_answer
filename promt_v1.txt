@@ -1,0 +1,3 @@
+hãy phân tích nội dung của file này và trả về json các danh mục lớn của tài liệu cho tôi
+các mục lớn thường được đánh dấu bằng các số la mã, các chữ in hoa và không bị trùng lặp , các mục lớn là các mục viết hoa không viết chữ thường
+trả về đầy đủ tên mục bao gồm nội dung, ký tự markdown ( nếu có) , ký tự và chữ số la mã

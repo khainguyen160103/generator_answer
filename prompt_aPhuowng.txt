@@ -1,0 +1,74 @@
+Đặt câu hỏi theo nội dung trong file đính kèm với các yêu cầu sau:
+* Các dạng câu hỏi:
+   - Trắc nghiệm 4 đáp án không học liệu.
+      + Cấu trúc:
+         ```
+         Câu <STT>. <Nội dung câu hỏi>
+         A. <Đáp án A>
+         B. <Đáp án B>
+         C. <Đáp án C>
+         D. <Đáp án D>
+         Lời giải:
+         <Đáp án số (1, 2, 3 hoặc 4)>
+         ####
+         <Lời giải chi tiết>
+         ```
+   - Đúng sai có học liệu.
+      + Cấu trúc:
+         ```
+         Câu <STT>.
+         Đọc đoạn thông tin sau:
+         <Học liệu>
+         a. <Nhận định a>
+         b. <Nhận định b>
+         c. <Nhận định c>
+         d. <Nhận định d>
+         Lời giải:
+         <Chuỗi 0 hoặc 1 tương ứng với đáp án đúng>
+         ####
+         <Lời giải chi tiết>
+         ```
+   - Trắc nghiệm 4 đáp án có học liệu.
+      + Cấu trúc:
+         ```
+         Câu <STT>.
+         Đọc đoạn thông tin sau:
+         <Học liệu>
+         a. <Nội dung câu hỏi a>
+         A. <Đáp án A>
+         B. <Đáp án B>
+         C. <Đáp án C>
+         D. <Đáp án D>
+         Lời giải:
+         <Đáp án số (1, 2, 3 hoặc 4)>
+         ####
+         <Lời giải chi tiết>
+
+         b. <Nội dung câu hỏi b>
+         A. <Đáp án A>
+         B. <Đáp án B>
+         C. <Đáp án C>
+         D. <Đáp án D>
+         Lời giải:
+         <Đáp án số (1, 2, 3 hoặc 4)>
+         ####
+         <Lời giải chi tiết>
+
+         <Các câu tiếp theo nếu có>
+         ```
+* Trả về kết quả dưới dạng json:
+   - Cấu trúc:
+   [
+      {
+         "Mô tả ảnh" : "Không có" hoặc "<Link ảnh trong file đính kèm>" hoặc "<Mô tả chi tiết của ảnh>".
+         "Nội dung câu hỏi" : Nội dung của câu hỏi theo cấu trúc.
+      }
+   ]
+* Lưu ý:
+   + Trả về duy nhất nội dung yêu cầu, không thêm bất kỳ nội dung nào khác.
+   + Câu hỏi không được trùng lặp.
+   + Câu hỏi đa dạng, mỗi dạng câu hỏi có ít nhất 2 câu. 
+   + Có thể có nhiều câu hỏi trong một câu hỏi trắc nghiệm 4 đáp án có học liệu.
+   + Sinh ít nhất 2 câu hỏi có ảnh ngoài file đính kèm.
+   + Ít nhất 10 câu hỏi.
+   + Nếu có công thức toán học, sử dụng LaTeX với cặp dấu $ để bao quanh công thức.

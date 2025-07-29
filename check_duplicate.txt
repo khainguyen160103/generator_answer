@@ -1,0 +1,8 @@
+Hãy thực hiện các nhiệm vụ sau với file JSON gửi đính kèm:
+
+1.  **Lọc trùng lặp:** So sánh "Nội dung câu hỏi" trong mỗi đối tượng. Nếu có hai hoặc nhiều câu hỏi trùng lặp, chỉ giữ lại MỘT câu hỏi duy nhất.
+2.  **Kiểm tra tính chính xác:** Đối với các câu hỏi còn lại sau khi lọc trùng lặp, hãy kiểm tra xem nội dung và phần "Lời giải" có chính xác không. Nếu câu hỏi hoặc lời giải bị sai, hãy **xóa hoàn toàn** đối tượng đó khỏi kết quả cuối cùng.
+
+**Yêu cầu về đầu ra (quan trọng nhất):**
+
+Trả về kết quả là một file JSON chỉ chứa các câu hỏi hợp lệ. **Tuyệt đối không được thêm bất kỳ trường (key) nào mới như 'Ghi chú' vào các đối tượng JSON trong file kết quả.** Chỉ trả về các trường gốc là "Mô tả ảnh" và "Nội dung câu hỏi" với cấu trúc y hệt ban đầ
