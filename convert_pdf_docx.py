@@ -10,6 +10,42 @@ load_dotenv()
 app_key = os.getenv('APP_KEY')
 app_id = os.getenv('APP_ID')
 
+class ConvertPDf: 
+    def __init__(self, pdf_path):
+        self.pdf_path = pdf_path
+        self.base_url = "https://api.mathpix.com/v3/pdf"
+
+    def upload_to_mathpix(self):
+        """Gửi PDF đến Mathpix API để convert"""
+        try:
+            with open(self.pdf_path, "rb") as f:
+                print("📤 Đang gửi request đến Mathpix...")
+
+                files = {
+                    "file": (os.path.basename(self.pdf_path), f, "application/pdf")
+                }
+
+                response = requests.post(
+                    self.base_url,
+                    headers={
+                        "app_id": app_id,
+                        "app_key": app_key
+                    },
+                    files=files
+                )
+
+                if response.status_code == 200:
+                    result = response.json()
+                    print("Gửi thành công!")
+                    return result
+                else:
+                    print(f"Lỗi API: {response.status_code} - {response.text}")
+                    return None
+
+        except Exception as e:
+            print(f"Lỗi: {e}")
+            return None
+        
 def send_pdf_to_mathpix(file_path):
     """Gửi PDF đến Mathpix API để convert"""
     try:

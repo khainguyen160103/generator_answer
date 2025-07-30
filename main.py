@@ -1,130 +1,87 @@
-import requests 
-import os 
-import time 
 from dotenv import load_dotenv
 
+import os 
+import re
+
+from callAI import GeminiClient
+from process import ConvertPDf
 load_dotenv()
 
-app_key = os.getenv('APP_KEY')
-app_id = os.getenv('APP_ID')
-headers = {'app_key': app_key, 'app_id': app_id}
-base_url = "https://api.mathpix.com/v3/pdf"
 
-def send_pdf_to_mathpix(file_path):
-    """Gửi PDF đến Mathpix API để convert"""
-    try:
-        with open(file_path, "rb") as f:
-            files = {
-                "file": (os.path.basename(file_path), f, "application/pdf")
-            }
+app_key = os.getenv('MATHPIX_APP_KEY')
+app_id = os.getenv('MATHPIX_APP_ID')
+api_key = os.getenv('API_KEY')
 
-            response = requests.post(
-                base_url,
-                headers=headers,
-                files=files
-            )
+path_gen_answer = r"D:\Tools\PDFConvert\prompt_aPhuowng.txt"
+path_check_duplicate = r"D:\Tools\PDFConvert\check_duplicate.txt"
 
-            if response.status_code == 200:
-                result = response.json()
-                print("Gửi thành công")
-                print(result)
-                return result
+path_markdown = r""
+
+with open(path_gen_answer, 'r', encoding='utf-8') as f:
+    prompt_gen_answer = f.read()
+
+with open(path_check_duplicate, 'r', encoding='utf-8') as f:
+    prompt_check_duplicate = f.read()
+
+
+def main(pdf_path):
+    
+
+   for filename in os.listdir(pdf_path):
+        if filename.endswith('.pdf'):
+            pdf_path = os.path.join(pdf_path, filename)
+            print(f"Đang convert: {pdf_path}")
+            pdf_converter = ConvertPDf(pdf_path, app_key, app_id)
+            path_md = pdf_converter.convert_pdf_to_mmd()
+            filename = os.path.splitext(os.path.basename(path_md))[0]
+
+            with open(path_md, "rb") as f:
+                md_data = f.read()
+            if path_md:
+                print(f"File đã convert: {path_md}")
+
+                gemini_client = GeminiClient(api_key=api_key)
+
+                response = gemini_client.send_data_to_AI(
+                    model="gemini-2.0-flash",
+                    data=md_data,
+                    mime_type="text/markdown",
+                    prompt=prompt_gen_answer
+                )
+
+                if response:
+                        cleaned = re.sub(r"^```json|```$", "", response, flags=re.MULTILINE).strip()
+                        with open(f"{filename}.txt", "w", encoding="utf-8") as f:
+                            f.write(cleaned)
+                print(f"Đã lưu kết quả vào {filename}.txt")
+
+                if os.path.exists(f"{filename}.txt"):
+                    with open(f"{filename}.txt", "rb") as f:
+                            json_content = f.read()
+                  
+
+                    gemini_client_check = GeminiClient(api_key="AIzaSyArOo27u0wO8CInTht6ed_NSAMM6y19hzo")
+                    print("Đang kiểm tra trùng lặp...")
+                    response_check = gemini_client_check.send_data_to_AI(
+                        model="gemini-2.0-flash-lite",
+                        mime_type="text/plain",
+                        data=json_content,
+                        prompt=prompt_check_duplicate
+                    )
+
+                    if response_check:
+                        # cleaned_check = re.sub(r"^```json|```$", "", response_check, flags=re.MULTILINE).strip()s
+                        with open(f"{filename}_check.json", "w", encoding="utf-8") as f:
+                            f.write(response_check)
+                        print(f"Đã lưu kết quả kiểm tra trùng lặp vào {filename}_check.json")
+                    else:
+                        print("Không thể kiểm tra trùng lặp")
+
             else:
-                print(f"Lỗi API: {response.status_code} - {response.text}")
-                return None
-
-    except Exception as e:
-        print(f"Lỗi: {e}")
-        return None
-
-def check_conversion_status(pdf_id):
-    """Kiểm tra trạng thái conversion"""
-    
-    try:
-        response = requests.get(f"{base_url}/{pdf_id}", headers=headers)
-        if response.status_code == 200:
-            result = response.json()
-            return result
-        else:
-            print(f"Lỗi check status: {response.status_code}")
-            return None
-    except Exception as e:
-        print(f"Lỗi check status: {e}")
-        return None
-
-def download_mmd(pdf_id, output_path):
-    """Download file DOCX đã convert"""
-
-    print(pdf_id)
-    time.sleep(15)
-    try:
-        response = requests.get(f"{base_url}/{pdf_id}.mmd", headers=headers)
-        
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            
-        with open(output_path, 'wb') as f:
-            f.write(response.content)
-            print(f"Downloaded: {output_path}")
-        return output_path
-    except Exception as e:
-        print(f"Lỗi download: {str(e)}")
-        return None
-
-
-def convert_pdf_to_mmd(pdf_path):
-    """Convert PDF to DOCX"""
-
-    print("Bắt đầu convert PDF to MMD")
-    
-    if not os.path.exists(pdf_path):
-        print(f"File không tồn tại: {pdf_path}")
-        return None
-    
-    result = send_pdf_to_mathpix(pdf_path)
-    if not result:
-        return None
-    
-    pdf_id = result['pdf_id']
-   
-    if not pdf_id:
-        print("Không nhận được pdf_id")
-        return None
-    
-    print(f"PDF ID: {pdf_id}")
-  
-    print("Đợi 15 giây để server cập nhật PDF ID")
-    time.sleep(15)
-    
-
-   
-    pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-    output_path = os.path.dirname(os.path.dirname(pdf_path)) + f"/output/{pdf_name}_converted.mmd"
-
-    # Download
-    downloaded_file = download_mmd(pdf_id, output_path)
-    
-    if downloaded_file:
-        print(f"Hoàn thành! File DOCX: {downloaded_file}")
-        return downloaded_file
-    else:
-        return None
-
+                print("Không thể convert file")
 
 if __name__ == "__main__": 
     
     pdf_folder = r"D:\Tools\PDFConvert\unlock"
     
-    for filename in os.listdir(pdf_folder):
-        if filename.endswith('.pdf'):
-            pdf_path = os.path.join(pdf_folder, filename)
-            print(f"Đang convert: {pdf_path}")
-            result = convert_pdf_to_mmd(pdf_path)
-            if result:
-                print(f"File đã convert: {result}")
-            else:
-                print(" Không thể convert file")
-    if result:
-        print(f"\nSUCCESS! File đã convert: {result}")
-    else:
-        print(f"\n FAILED! Không thể convert file")
-
+    main(pdf_folder)
