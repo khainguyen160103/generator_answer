@@ -64,8 +64,7 @@ class ConvertPDf:
         """Download file MMD đã convert"""
 
         print(pdf_id)
-        # self.poll_conversion_status()
-        # time.sleep(15)
+        
         try:
             response = requests.get(f"{self.base_url}/{pdf_id}.mmd", headers=self.headers)
             
@@ -78,7 +77,6 @@ class ConvertPDf:
         except Exception as e:
             print(f"Lỗi download: {str(e)}")
             return None
-
 
     def convert_pdf_to_mmd(self):
         """Convert PDF to MMD"""

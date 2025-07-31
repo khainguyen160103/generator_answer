@@ -1,4 +1,4 @@
-Hãy thực hiện các nhiệm vụ sau với file JSON gửi đính kèm:
+Hãy thực hiện các nhiệm vụ sau với dữ liệu JSON:
 
 1.  **Lọc trùng lặp:** So sánh "Nội dung câu hỏi" trong mỗi đối tượng. Nếu có hai hoặc nhiều câu hỏi trùng lặp, chỉ giữ lại MỘT câu hỏi duy nhất.
 2.  **Kiểm tra tính chính xác:** Đối với các câu hỏi còn lại sau khi lọc trùng lặp, hãy kiểm tra xem nội dung và phần "Lời giải" có chính xác không. Nếu câu hỏi hoặc lời giải bị sai, hãy **xóa hoàn toàn** đối tượng đó khỏi kết quả cuối cùng.

@@ -1,9 +1,11 @@
 from dotenv import load_dotenv
+from google.oauth2 import service_account
+
 
 import os 
 import re
 
-from callAI import GeminiClient
+from callAI import VertexClient
 from process import ConvertPDf
 load_dotenv()
 
@@ -11,7 +13,7 @@ load_dotenv()
 app_key = os.getenv('MATHPIX_APP_KEY')
 app_id = os.getenv('MATHPIX_APP_ID')
 api_key = os.getenv('API_KEY')
-
+project_id = os.getenv('PROJECT_ID')
 path_gen_answer = r"D:\Tools\PDFConvert\prompt_aPhuowng.txt"
 path_check_duplicate = r"D:\Tools\PDFConvert\check_duplicate.txt"
 
@@ -22,6 +24,26 @@ with open(path_gen_answer, 'r', encoding='utf-8') as f:
 
 with open(path_check_duplicate, 'r', encoding='utf-8') as f:
     prompt_check_duplicate = f.read()
+
+def get_vertex_ai_credentials():
+    service_account_data = {
+        "type": os.getenv("TYPE"),
+        "project_id": os.getenv("PROJECT_ID"),
+        "private_key_id": os.getenv("PRIVATE_KEY_ID"),
+        "private_key": os.getenv("PRIVATE_KEY").replace('\\n', '\n'),
+        "client_email": os.getenv("CLIENT_EMAIL"),
+        "client_id": os.getenv("CLIENT_ID", ""),
+        "auth_uri": os.getenv("AUTH_URI"),
+        "token_uri": os.getenv("TOKEN_URI"),
+        "auth_provider_x509_cert_url": os.getenv("AUTH_PROVIDER_X509_CERT_URL"),
+        "client_x509_cert_url": os.getenv("CLIENT_X509_CERT_URL"),
+        "universe_domain": os.getenv("UNIVERSE_DOMAIN")
+    }
+    credentials = service_account.Credentials.from_service_account_info(
+        service_account_data,
+        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    return credentials
 
 
 def main(pdf_path):
@@ -40,10 +62,9 @@ def main(pdf_path):
             if path_md:
                 print(f"File đã convert: {path_md}")
 
-                gemini_client = GeminiClient(api_key=api_key)
+                gemini_client = VertexClient(project_id=project_id, creds=get_vertex_ai_credentials(), model="gemini-2.0-flash")
 
                 response = gemini_client.send_data_to_AI(
-                    model="gemini-2.0-flash",
                     data=md_data,
                     mime_type="text/markdown",
                     prompt=prompt_gen_answer
@@ -60,19 +81,19 @@ def main(pdf_path):
                             json_content = f.read()
                   
 
-                    gemini_client_check = GeminiClient(api_key="AIzaSyArOo27u0wO8CInTht6ed_NSAMM6y19hzo")
+                    gemini_client_check = VertexClient(project_id=project_id, creds=get_vertex_ai_credentials(), model="gemini-2.0-flash-lite"
+                                                       )
                     print("Đang kiểm tra trùng lặp...")
-                    response_check = gemini_client_check.send_data_to_AI(
-                        model="gemini-2.0-flash-lite",
+                    response_check = gemini_client_check.send_data_to_AI( 
                         mime_type="text/plain",
                         data=json_content,
                         prompt=prompt_check_duplicate
                     )
 
                     if response_check:
-                        # cleaned_check = re.sub(r"^```json|```$", "", response_check, flags=re.MULTILINE).strip()s
+                        cleaned = re.sub(r"^```json|```$", "", response, flags=re.MULTILINE).strip()
                         with open(f"{filename}_check.json", "w", encoding="utf-8") as f:
-                            f.write(response_check)
+                            f.write(cleaned)
                         print(f"Đã lưu kết quả kiểm tra trùng lặp vào {filename}_check.json")
                     else:
                         print("Không thể kiểm tra trùng lặp")
