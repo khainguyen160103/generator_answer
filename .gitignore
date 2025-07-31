@@ -2,4 +2,4 @@
 .env
 __pycache__/
 input/
-output/
+output/"config.py"  
