@@ -27,6 +27,8 @@ from main import ConvertPDf, VertexClient
 # Tải biến môi trường
 load_dotenv()
 
+
+
 class ProcessingThread(QThread):
     """Luồng xử lý PDF trong nền."""
     progress = pyqtSignal(str)  # Tín hiệu để cập nhật giao diện với thông báo tiến độ
@@ -48,9 +50,16 @@ class ProcessingThread(QThread):
             # Đọc các file prompt
             with open(self.prompt_path, 'r', encoding='utf-8') as f:
                 prompt_gen_answer = f.read()
+
             check_duplicate_path = os.path.join(os.path.dirname(self.prompt_path), 'check_duplicate.txt')
+            check_true_false_path = os.path.join(os.path.dirname(self.prompt_path), 'check_trueFalse.txt')
+            
+
             with open(check_duplicate_path, 'r', encoding='utf-8') as f:
                 prompt_check_duplicate = f.read()
+            with open(check_true_false_path, 'r', encoding='utf-8') as f:
+                prompt_check_true_false = f.read()
+
 
             pdf_path = self.pdf_file
             self.progress.emit(f"Đang xử lý: {pdf_path}")
@@ -103,11 +112,49 @@ class ProcessingThread(QThread):
                             f.write(cleaned_check)
                         self.progress.emit(f"Đã lưu kết quả kiểm tra trùng lặp: {check_path}")
 
-                        # Chuyển JSON sang DOCX
-                        docx_path = f"{filename_base}.docx"
-                        create_docx_from_json(cleaned_check, docx_path)
-                        generated_files.append(docx_path)
-                        self.progress.emit(f"Đã tạo DOCX: {docx_path}")
+                        if os.path.exists(check_path):
+                            self.progress.emit("Đang check đúng sai..")
+                           
+                            with open(check_path, "r", encoding="utf-8") as f:
+                                    try:
+                                        objects = json.load(f)
+                                    except Exception as e:
+                                        self.error.emit(f"Lỗi đọc file trùng lặp: {str(e)}")
+                                        objects = []
+
+                            results = []
+                            for idx, obj in enumerate(objects):
+                                    # Ghép prompt với object
+                                    prompt = f"{prompt_check_true_false}\n{json.dumps(obj, ensure_ascii=False, indent=2)}"
+                                    response = gemini_client_check.send_data_to_AI(
+                                        mime_type="text/plain",
+                                        data=prompt.encode("utf-8"),
+                                        prompt=""  # Nếu hàm yêu cầu prompt riêng, để trống vì đã ghép ở trên
+                                    )
+                                    if response:
+                                        cleaned = re.sub(r"^```json|```$", "", response, flags=re.MULTILINE).strip()
+                                        try:
+                                            result_obj = json.loads(cleaned)
+                                        except Exception:
+                                            result_obj = {"raw": cleaned}
+                                        results.append(result_obj)
+                                        self.progress.emit(f"Đã xử lý đúng/sai cho câu hỏi {idx+1}/{len(objects)}")
+                                    else:
+                                        results.append({"error": "No response", "object": obj})
+
+                                # Ghi toàn bộ kết quả ra file JSON
+                            check_true_false_result_path = f"{filename_base}_true_false_results.json"
+                            with open(check_true_false_result_path, "w", encoding="utf-8") as f:
+                                    json.dump(results, f, ensure_ascii=False, indent=2)
+                            self.progress.emit(f"Đã lưu kết quả đúng/sai cho từng câu hỏi: {check_true_false_result_path}")
+                            generated_files.append(check_true_false_result_path)
+
+                                # Chuyển JSON sang DOCX
+                            docx_true_false_path = f"{filename_base}_true_false_results.docx"
+                            create_docx_from_json(check_true_false_result_path, docx_true_false_path)
+                            self.progress.emit(f"Đã tạo DOCX từ kết quả đúng/sai: {docx_true_false_path}")
+                            generated_files.append(docx_true_false_path)
+
                     else:
                         self.error.emit(f"Không thể kiểm tra trùng lặp cho {json_path}")
                 else:
